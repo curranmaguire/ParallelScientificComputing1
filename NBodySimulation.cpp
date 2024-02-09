@@ -3,7 +3,7 @@
 NBodySimulation::NBodySimulation() : t(0), tFinal(0), tPlot(0), tPlotDelta(0), NumberOfBodies(0),
                                      x(nullptr), v(nullptr), mass(nullptr),
                                      timeStepSize(0), maxV(0), minDx(0), videoFile(nullptr),
-                                     snapshotCounter(0), timeStepCounter(0){};
+                                     snapshotCounter(0), timeStepCounter(0), force1(nullptr), force2(nullptr), force3(nullptr), C(0){};
 
 NBodySimulation::~NBodySimulation()
 {
@@ -68,7 +68,6 @@ void NBodySimulation::checkInput(int argc, char **argv)
 
 void NBodySimulation::setUp(int argc, char **argv)
 {
-
   checkInput(argc, argv);
 
   NumberOfBodies = (argc - 4) / 7;
@@ -76,7 +75,10 @@ void NBodySimulation::setUp(int argc, char **argv)
   x = new double *[NumberOfBodies];
   v = new double *[NumberOfBodies];
   mass = new double[NumberOfBodies];
-
+  force1 = new double[NumberOfBodies];
+  force2 = new double[NumberOfBodies];
+  force3 = new double[NumberOfBodies];
+  C = 0.01 / NumberOfBodies;
   int readArgument = 1;
 
   tPlotDelta = std::stof(argv[readArgument]);
@@ -140,60 +142,90 @@ double NBodySimulation::force_calculation(int i, int j, int direction)
       (x[j][2] - x[i][2]) * (x[j][2] - x[i][2]));
   const double distance3 = distance * distance * distance;
   minDx = std::min(minDx, distance);
+  if (distance <= C * (mass[i] + mass[j]))
+  {
+  }
 
   return (x[i][direction] - x[j][direction]) * mass[i] * mass[j] / distance3;
 }
 
+bool NBodySimulation::check_collision(int body)
+{
+}
+
 void NBodySimulation::updateBody()
 {
-
   timeStepCounter++;
   maxV = 0.0;
   minDx = std::numeric_limits<double>::max();
 
-  // force0 = force along x direction
-  // force1 = force along y direction
-  // force2 = force along z direction
-  double *force0 = new double[NumberOfBodies];
-  double *force1 = new double[NumberOfBodies];
-  double *force2 = new double[NumberOfBodies];
+  // force1 = force along x direction
+  // force2 = force along y direction
+  // force3 = force along z direction
 
   for (int j = 0; j < NumberOfBodies; j++)
   {
-    force0[j] = 0.0;
     force1[j] = 0.0;
     force2[j] = 0.0;
+    force3[j] = 0.0;
     for (int i = 0; i < NumberOfBodies; i++)
     {
       if (i == j)
-      {
         continue;
-      }
-      // x,y,z forces acting on particle i and j.
-      force0[j] += force_calculation(i, j, 0);
-      force1[j] += force_calculation(i, j, 1);
-      force2[j] += force_calculation(i, j, 2);
+
+      // x,y,z forces acting on particle j by i.
+      force1[j] += force_calculation(i, j, 0);
+      force2[j] += force_calculation(i, j, 1);
+      force3[j] += force_calculation(i, j, 2);
     }
+  }
+  // seperate blocks so that we are not changing positions of bodies
+  // while still calculating interactions with other bodies
+  for (int j = 0; j < NumberOfBodies; j++)
+  {
 
     x[j][0] = x[j][0] + timeStepSize * v[j][0];
     x[j][1] = x[j][1] + timeStepSize * v[j][1];
     x[j][2] = x[j][2] + timeStepSize * v[j][2];
 
-    v[j][0] = v[j][0] + timeStepSize * force0[j] / mass[j];
-    v[j][1] = v[j][1] + timeStepSize * force1[j] / mass[j];
-    v[j][2] = v[j][2] + timeStepSize * force2[j] / mass[j];
+    v[j][0] = v[j][0] + timeStepSize * force1[j] / mass[j];
+    v[j][1] = v[j][1] + timeStepSize * force2[j] / mass[j];
+    v[j][2] = v[j][2] + timeStepSize * force3[j] / mass[j];
     double V = std::sqrt(v[j][0] * v[j][0] + v[j][1] * v[j][1] + v[j][2] * v[j][2]);
     if (maxV < V)
     {
       maxV = V;
     }
   }
+  /*
+   for (int j = 0; j < NumberOfBodies; j++)
+   {
+     for (int i = 0; i < NumberOfBodies; i++)
+     {
+       const double distance = sqrt(
+           (x[j][0] - x[i][0]) * (x[j][0] - x[i][0]) +
+           (x[j][1] - x[i][1]) * (x[j][1] - x[i][1]) +
+           (x[j][2] - x[i][2]) * (x[j][2] - x[i][2]));
+       const double distance3 = distance * distance * distance;
+       minDx = std::min(minDx, distance);
+       if (distance <= C * (mass[i] + mass[j]))
+       {
+
+         x[j][0] = (mass[j] * x[j][0] + mass[i] * x[i][0]) / (mass[j] + mass[i]);
+         x[j][1] = (mass[j] * x[j][1] + mass[i] * x[i][1]) / (mass[j] + mass[i]);
+         x[j][2] = (mass[j] * x[j][2] + mass[i] * x[i][2]) / (mass[j] + mass[i]);
+         v[j][0] = (mass[j] * v[j][0] + mass[i] * v[i][0]) / (mass[j] + mass[i]);
+         v[j][1] = (mass[j] * v[j][1] + mass[i] * v[i][1]) / (mass[j] + mass[i]);
+         v[j][2] = (mass[j] * v[j][2] + mass[i] * v[i][2]) / (mass[j] + mass[i]);
+
+         mass[j] += mass[i];
+         mass[i] = 0;
+       }
+     }
+    }
+     */
 
   t += timeStepSize;
-
-  delete[] force0;
-  delete[] force1;
-  delete[] force2;
 }
 
 /**

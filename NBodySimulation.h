@@ -5,67 +5,41 @@
 #include <limits>
 #include <sstream>
 
-class NBodySimulation {
+class NBodySimulation
+{
 
- private:
+private:
   double t;
   double tFinal;
   double tPlot;
   double tPlotDelta;
-
   int NumberOfBodies;
-
-  /**
-   * Pointer to pointers. Each pointer in turn points to three coordinates, i.e.
-   * each pointer represents one molecule/particle/body.
-   */
-  double** x;
-
-  /**
-   * Equivalent to x storing the velocities.
-   */
-  double** v;
-
-  /**
-   * One mass entry per molecule/particle.
-   */
-  double*  mass;
-
-  /**
-   * Global time step size used.
-   */
-  double timeStepSize;
-
-  /**
-   * Maximum velocity of all particles.
-   */
-  double maxV;
-
-  /**
-   * Minimum distance between two elements.
-   */
-  double minDx;
-
-  /**
-   * Stream for video output file.
-   */
-  std::ofstream videoFile;
+  double **x;              // list of 3 dimensional arrays, storing distances
+  double C;                // collision constant
+  double **v;              // equivalent to x storing the velocities
+  double *mass;            // array of masses
+  double timeStepSize;     // * Global time step size used.
+  double maxV;             //   * Maximum velocity of all particles.
+  double minDx;            // Minimum distance between two elements.
+  std::ofstream videoFile; // Stream for video output file.
 
   /**
    * Output counters.
    */
   int snapshotCounter;
   int timeStepCounter;
+  double *force1;
+  double *force2;
+  double *force3;
 
-
- public:
-  NBodySimulation ();
-  ~NBodySimulation ();
+public:
+  NBodySimulation();
+  ~NBodySimulation();
 
   /**
    * Check that the number command line parameters is correct.
    */
-  void checkInput(int argc, char** argv);
+  void checkInput(int argc, char **argv);
 
   /**
    * Set up scenario from the command line.
@@ -77,33 +51,34 @@ class NBodySimulation {
    *
    * The semantics of this operations are not to be changed in the assignment.
    */
-  void setUp (int argc, char** argv);
+  void setUp(int argc, char **argv);
 
   /**
    * Compute forces.
    *
    * The current force is gravity, i.e. (x_i-x_j) * m_i * m_j/r^3.
    **/
-  double force_calculation (int i, int j, int direction);
+  double force_calculation(int i, int j, int direction);
 
+  bool check_collision(int body);
   /**
    * Implement timestepping scheme and force updates.
    */
-  void updateBody ();
+  void updateBody();
 
   /**
    * Check if the last time step has been reached (simulation is completed).
    *
    * This operation is not to be changed in the assignment.
    */
-  bool hasReachedEnd ();
+  bool hasReachedEnd();
 
   /**
    * Take simulations snapshopts and print summary to standard output.
    *
    * This operation is not to be changed in the assignment.
    */
-  void takeSnapshot ();
+  void takeSnapshot();
 
   /**
    * Handle Paraview output.
@@ -113,16 +88,15 @@ class NBodySimulation {
    * The file format is documented at
    * http://www.vtk.org/wp-content/uploads/2015/04/file-formats.pdf
    */
-  void openParaviewVideoFile ();
-  void closeParaviewVideoFile ();
-  void printParaviewSnapshot ();
+  void openParaviewVideoFile();
+  void closeParaviewVideoFile();
+  void printParaviewSnapshot();
 
   /**
    * Handle terminal output.
    *
    * These operations are not to be changed in the assignment.
    */
-  void printSnapshotSummary ();
-  void printSummary ();
-
+  void printSnapshotSummary();
+  void printSummary();
 };
