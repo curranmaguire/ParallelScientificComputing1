@@ -19,9 +19,22 @@ NBodySimulation::~NBodySimulation()
       delete[] v[i];
     delete[] v;
   }
+
   if (mass != nullptr)
   {
     delete[] mass;
+  }
+  if (force1 != nullptr)
+  {
+    delete[] force1;
+  }
+  if (force2 != nullptr)
+  {
+    delete[] force2;
+  }
+  if (force3 != nullptr)
+  {
+    delete[] force3;
   }
 }
 
@@ -142,15 +155,113 @@ double NBodySimulation::force_calculation(int i, int j, int direction)
       (x[j][2] - x[i][2]) * (x[j][2] - x[i][2]));
   const double distance3 = distance * distance * distance;
   minDx = std::min(minDx, distance);
-  if (distance <= C * (mass[i] + mass[j]))
-  {
-  }
 
   return (x[i][direction] - x[j][direction]) * mass[i] * mass[j] / distance3;
 }
 
-bool NBodySimulation::check_collision(int body)
+void NBodySimulation::check_collision()
 {
+  // Assuming `C` and other relevant variables are defined correctly
+  int *merge = new int[NumberOfBodies];
+  std::fill_n(merge, NumberOfBodies, -1);
+
+  int newNBodies = NumberOfBodies;
+  for (int i = 0; i < NumberOfBodies - 1; i++)
+  {
+    for (int j = i + 1; j < NumberOfBodies; j++)
+    {
+      if (i == j)
+        continue;
+      double distance = sqrt((x[j][0] - x[i][0]) * (x[j][0] - x[i][0]) +
+                             (x[j][1] - x[i][1]) * (x[j][1] - x[i][1]) +
+                             (x[j][2] - x[i][2]) * (x[j][2] - x[i][2])); // Calculate as before;
+      if (distance < C * (mass[i] + mass[j]))
+      {
+        if (merge[i] == -1 && merge[j] == -1)
+        {               // Neither body has been merged yet
+          merge[j] = i; // Merge j into i
+          newNBodies--; // Decrease count of bodies only when a new merge is found
+        }
+        else
+        {
+          if (merge[i] != -1)
+          {
+            merge[j] = merge[i]; // merge the bodies into the original
+          }
+          else
+          {
+            if (merge[j] != -1)
+            {
+              merge[i] = merge[j];
+            }
+            else
+            {
+              if (merge[i] != -1 && merge[j] != -1)
+              {
+                // if both are already merging then
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  double **newX = new double *[newNBodies];
+  double **newV = new double *[newNBodies];
+  double *newM = new double[newNBodies];
+
+  int newIndex = 0;
+  for (int i = 0; i < NumberOfBodies; i++)
+  {
+    // Skip bodies that are sources in a merge
+    if (merge[i] != -1)
+      continue;
+
+    // Allocate new arrays for position and velocity
+    newX[newIndex] = new double[3];
+    newV[newIndex] = new double[3];
+
+    // Initialize mass and position/velocity with the body's current state
+    newM[newIndex] = mass[i];
+    for (int dim = 0; dim < 3; dim++)
+    {
+      newX[newIndex][dim] = x[i][dim];
+      newV[newIndex][dim] = v[i][dim];
+    }
+
+    // Merge other bodies into this one
+    for (int j = 0; j < NumberOfBodies; j++)
+    {
+      if (merge[j] == i)
+      { // Body j merges into body i
+        double totalMass = newM[newIndex] + mass[j];
+        for (int dim = 0; dim < 3; dim++)
+        {
+          newX[newIndex][dim] = (newX[newIndex][dim] * newM[newIndex] + x[j][dim] * mass[j]) / totalMass;
+          newV[newIndex][dim] = (newV[newIndex][dim] * newM[newIndex] + v[j][dim] * mass[j]) / totalMass;
+        }
+        newM[newIndex] = totalMass;
+      }
+    }
+
+    newIndex++;
+  }
+  // Free old arrays
+  for (int i = 0; i < NumberOfBodies; i++)
+  {
+    delete[] x[i];
+    delete[] v[i];
+  }
+  delete[] x;
+  delete[] v;
+  delete[] mass;
+
+  // Update pointers to new arrays
+  x = newX;
+  v = newV;
+  mass = newM;
+  NumberOfBodies = newNBodies;
+  delete[] merge;
 }
 
 void NBodySimulation::updateBody()
@@ -197,6 +308,7 @@ void NBodySimulation::updateBody()
       maxV = V;
     }
   }
+  check_collision();
   /*
    for (int j = 0; j < NumberOfBodies; j++)
    {

@@ -8,7 +8,7 @@
 class NBodySimulation
 {
 
-private:
+public:
   double t;
   double tFinal;
   double tPlot;
@@ -32,7 +32,6 @@ private:
   double *force2;
   double *force3;
 
-public:
   NBodySimulation();
   ~NBodySimulation();
 
@@ -60,7 +59,7 @@ public:
    **/
   double force_calculation(int i, int j, int direction);
 
-  bool check_collision(int body);
+  void check_collision();
   /**
    * Implement timestepping scheme and force updates.
    */
