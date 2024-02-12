@@ -250,52 +250,52 @@ public:
         timeStepCounter++;
         maxV = 0.0;
         minDx = std::numeric_limits<double>::max();
-        for (int tileN = 0; tileN < NumberOfBodies; tileN += tileSize)
+#pragma omp simd
+        for (int j = 0; j < NumberOfBodies; j++)
         {
-            // loop through chunked arrays to make CPU faster
-            double force1Tile[tileSize];
-            double force2Tile[tileSize];
-            double force3Tile[tileSize];
-#pragma omp simd
-            for (int j = 0; j < tileSize; j++)
-            {
-                force1Tile[j] = 0.0;
-                force2Tile[j] = 0.0;
-                force3Tile[j] = 0.0;
-            }
+            force_x[j] = 0;
+            force_y[j] = 0;
+            force_z[j] = 0;
+        }
 
-            // #pragma omp simd
-            for (int j = 0; j < NumberOfBodies; j++)
-            {
-                for (int i = tileN; i < tileN + tileSize; i++)
-                {
-                    double dx, dy, dz;
-                    double distance = 0.0;
-                    double distanceInv = 0.0;
+        // #pragma omp simd
+        // force calculation phase
+        for (int j = 0; j < NumberOfBodies; j++)
+        {
 
-                    dx = distance_x[j] - distance_x[i];
-                    dy = distance_y[j] - distance_y[i];
-                    dz = distance_z[j] - distance_z[i];
-                    distance = sqrtl(dx * dx + dy * dy + dz * dz + 1e-10);
-                    distanceInv = 1 / distance;
-                    minDx = std::min(minDx, distance);
-
-                    force1Tile[i - tileN] += (dx)*mass[i] * mass[j] * distanceInv * distanceInv * distanceInv;
-                    force2Tile[i - tileN] += (dy)*mass[i] * mass[j] * distanceInv * distanceInv * distanceInv;
-                    force3Tile[i - tileN] += (dz)*mass[i] * mass[j] * distanceInv * distanceInv * distanceInv;
-                }
-            }
-#pragma omp simd
-            for (int k = 0; k < tileSize; k++)
+            for (int i = 0; i < NumberOfBodies; i++)
             {
-                force_x[k + tileN] = force1Tile[k];
-                force_y[k + tileN] = force2Tile[k];
-                force_z[k + tileN] = force3Tile[k];
+                if (i == j)
+                    continue;
+                double dx, dy, dz;
+                double distance = 0.0;
+                double distanceInv = 0.0;
+
+                dx = distance_x[i] - distance_x[j];
+                dy = distance_y[i] - distance_y[j];
+                dz = distance_z[i] - distance_z[j];
+                distance = sqrtl(dx * dx + dy * dy + dz * dz);
+                distanceInv = 1 / distance;
+                minDx = std::min(minDx, distance);
+
+                force_x[j] += (dx)*mass[i] * mass[j] * distanceInv * distanceInv * distanceInv;
+                force_y[j] += (dy)*mass[i] * mass[j] * distanceInv * distanceInv * distanceInv;
+                force_z[j] += (dz)*mass[i] * mass[j] * distanceInv * distanceInv * distanceInv;
             }
         }
+        /*
+#pragma omp simd
+        for (int k = 0; k < tileSize; k++)
+        {
+            force_x[k + tileN] = force1Tile[k];
+            force_y[k + tileN] = force2Tile[k];
+            force_z[k + tileN] = force3Tile[k];
+        }
+    }
+        */
         // seperate blocks so that we are not changing positions of bodies
         // while still calculating interactions with other bodies
-
+#pragma omp simd
         for (int j = 0; j < NumberOfBodies; j++)
         {
 
@@ -307,6 +307,10 @@ public:
             velocity_y[j] = velocity_y[j] + timeStepSize * force_y[j] / mass[j];
             velocity_z[j] = velocity_z[j] + timeStepSize * force_z[j] / mass[j];
             double V = std::sqrt(velocity_x[j] * velocity_x[j] + velocity_y[j] * velocity_y[j] + velocity_z[j] * velocity_z[j]);
+        }
+        for (int j = 0; j < NumberOfBodies; j++)
+        {
+            double V = std::sqrt(velocity_x[j] * velocity_x[j] + velocity_y[j] * velocity_y[j] + velocity_z[j] * velocity_z[j]);
             if (maxV < V)
             {
                 maxV = V;
@@ -317,7 +321,8 @@ public:
         t += timeStepSize;
     }
 
-    bool hasReachedEnd()
+    bool
+    hasReachedEnd()
     {
         return t > tFinal;
     }
