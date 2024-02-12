@@ -266,6 +266,7 @@ void NBodySimulation::check_collision()
 
 void NBodySimulation::updateBody()
 {
+
   timeStepCounter++;
   maxV = 0.0;
   minDx = std::numeric_limits<double>::max();
@@ -279,6 +280,10 @@ void NBodySimulation::updateBody()
     force1[j] = 0.0;
     force2[j] = 0.0;
     force3[j] = 0.0;
+  }
+  for (int j = 0; j < NumberOfBodies; j++)
+  {
+
     for (int i = 0; i < NumberOfBodies; i++)
     {
       if (i == j)
@@ -292,6 +297,7 @@ void NBodySimulation::updateBody()
   }
   // seperate blocks so that we are not changing positions of bodies
   // while still calculating interactions with other bodies
+
   for (int j = 0; j < NumberOfBodies; j++)
   {
 
@@ -309,33 +315,6 @@ void NBodySimulation::updateBody()
     }
   }
   check_collision();
-  /*
-   for (int j = 0; j < NumberOfBodies; j++)
-   {
-     for (int i = 0; i < NumberOfBodies; i++)
-     {
-       const double distance = sqrt(
-           (x[j][0] - x[i][0]) * (x[j][0] - x[i][0]) +
-           (x[j][1] - x[i][1]) * (x[j][1] - x[i][1]) +
-           (x[j][2] - x[i][2]) * (x[j][2] - x[i][2]));
-       const double distance3 = distance * distance * distance;
-       minDx = std::min(minDx, distance);
-       if (distance <= C * (mass[i] + mass[j]))
-       {
-
-         x[j][0] = (mass[j] * x[j][0] + mass[i] * x[i][0]) / (mass[j] + mass[i]);
-         x[j][1] = (mass[j] * x[j][1] + mass[i] * x[i][1]) / (mass[j] + mass[i]);
-         x[j][2] = (mass[j] * x[j][2] + mass[i] * x[i][2]) / (mass[j] + mass[i]);
-         v[j][0] = (mass[j] * v[j][0] + mass[i] * v[i][0]) / (mass[j] + mass[i]);
-         v[j][1] = (mass[j] * v[j][1] + mass[i] * v[i][1]) / (mass[j] + mass[i]);
-         v[j][2] = (mass[j] * v[j][2] + mass[i] * v[i][2]) / (mass[j] + mass[i]);
-
-         mass[j] += mass[i];
-         mass[i] = 0;
-       }
-     }
-    }
-     */
 
   t += timeStepSize;
 }
