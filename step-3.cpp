@@ -1,6 +1,7 @@
 #include <iomanip>
-
+#include <omp.h>
 #include "NBodySimulationVectorised.cpp"
+#include <mm_malloc.h>
 
 /**
  * You can compile this file with
@@ -23,23 +24,37 @@
  * or remove input checking, if you feel the need to do so. But keep in mind
  * that you may not alter what the program writes to the standard output.
  */
-int main (int argc, char** argv) {
+int main(int argc, char **argv)
+{
 
   std::cout << std::setprecision(15);
 
   // Code that initialises and runs the simulation.
   NBodySimulationVectorised nbs;
-  nbs.setUp(argc,argv);
+  double startTime = omp_get_wtime();
+  nbs.setUp(argc, argv);
+  double endTime = omp_get_wtime();         // Capture end time
+  double elapsedTime = endTime - startTime; // Calculate elapsed time
+
+  // Capture end time
+  // Calculate elapsed time
+
   nbs.openParaviewVideoFile();
   nbs.takeSnapshot();
+  double startTime1 = omp_get_wtime();
 
-  while (!nbs.hasReachedEnd()) {
+  while (!nbs.hasReachedEnd())
+  {
     nbs.updateBody();
     nbs.takeSnapshot();
   }
 
+  double endTime1 = omp_get_wtime();
+  double elapsedTime1 = endTime1 - startTime1;
   nbs.printSummary();
   nbs.closeParaviewVideoFile();
+  std::cout << "update body execution time: " << elapsedTime1 << " seconds" << std::endl;
+  std::cout << "setup execution time: " << elapsedTime << " seconds" << std::endl;
 
   return 0;
 }
