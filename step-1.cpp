@@ -52,8 +52,8 @@ int main(int argc, char **argv)
   double elapsedTime1 = endTime1 - startTime1;
   nbs.printSummary();
   nbs.closeParaviewVideoFile();
-  std::cout << "update body execution time: " << elapsedTime1 << " seconds" << std::endl;
-  std::cout << "setup execution time: " << elapsedTime << " seconds" << std::endl;
+  // std::cout << "update body execution time: " << elapsedTime1 << " seconds" << std::endl;
+  // std::cout << "setup execution time: " << elapsedTime << " seconds" << std::endl;
 
   return 0;
 }

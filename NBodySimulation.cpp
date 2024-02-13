@@ -314,7 +314,7 @@ void NBodySimulation::updateBody()
       maxV = V;
     }
   }
-  check_collision();
+  // check_collision();
 
   t += timeStepSize;
 }
