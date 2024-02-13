@@ -36,6 +36,24 @@ public:
   double *force_z;
   double *mass;
 
+  ~NBodySimulationParallelised()
+  {
+    if (mass && velocity_x && velocity_y && velocity_z && distance_x && distance_y && distance_z && force_x && force_y && force_z)
+    {
+      std::cout << "pointers exist so demalloc" << std::endl;
+      _mm_free(distance_x);
+      _mm_free(distance_y);
+      _mm_free(distance_z);
+      _mm_free(velocity_x);
+      _mm_free(velocity_y);
+      _mm_free(velocity_z);
+      _mm_free(mass);
+    }
+    else
+    {
+      std::cout << "couldn't dealloc as some memory items are not working" << std::endl;
+    }
+  }
   void checkInput(int argc, char **argv)
   {
     if (argc == 1)
@@ -248,7 +266,7 @@ public:
     delete[] velocity_y;
     delete[] velocity_z;
     delete[] mass;
-
+    delete[] merge;
     // Update pointers to new arrays
     distance_x = newDistance_x;
     distance_y = newDistance_y;
@@ -258,8 +276,6 @@ public:
     velocity_z = newVelocity_z;
     mass = newM;
     NumberOfBodies = newNBodies;
-
-    delete[] merge;
   }
   void updateBody()
 
@@ -270,7 +286,7 @@ public:
     timeStepCounter++;
     maxV = 0.0;
     minDx = std::numeric_limits<double>::max();
-#pragma omp target parallel for shared(distance_x, distance_y, distance_z, mass)
+#pragma omp parallel for shared(distance_x, distance_y, distance_z, mass)
     for (int chunk = 0; chunk < NumberOfBodies; chunk += tileSize)
     {
       double f_xchunk[tileSize];
@@ -313,7 +329,7 @@ public:
         force_z[k + chunk] = f_zchunk[k];
       }
     }
-#pragma omp target parallel for
+#pragma omp parallel for
     for (int j = 0; j < NumberOfBodies; j++)
     {
 
@@ -435,8 +451,8 @@ int main(int argc, char **argv)
   double elapsedTime1 = endTime1 - startTime1;
   nbs.printSummary();
   nbs.closeParaviewVideoFile();
-  std::cout << "update body execution time: " << elapsedTime1 << " seconds" << std::endl;
-  std::cout << "setup execution time: " << elapsedTime << " seconds" << std::endl;
+  // std::cout << "update body execution time: " << elapsedTime1 << " seconds" << std::endl;
+  // std::cout << "setup execution time: " << elapsedTime << " seconds" << std::endl;
 
   return 0;
 }

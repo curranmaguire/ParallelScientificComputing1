@@ -1,1 +1,2 @@
-/paraview-output/
+**/paraview-output/
+**/Makefile
