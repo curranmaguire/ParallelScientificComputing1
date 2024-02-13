@@ -276,11 +276,12 @@ public:
                 dz = distance_z[i] - distance_z[j];
                 distance = sqrtl(dx * dx + dy * dy + dz * dz);
                 distanceInv = 1 / distance;
+                double distance3inv = distanceInv * distanceInv * distanceInv;
                 minDx = std::min(minDx, distance);
 
-                force_x[j] += (dx)*mass[i] * mass[j] * distanceInv * distanceInv * distanceInv;
-                force_y[j] += (dy)*mass[i] * mass[j] * distanceInv * distanceInv * distanceInv;
-                force_z[j] += (dz)*mass[i] * mass[j] * distanceInv * distanceInv * distanceInv;
+                force_x[j] += (dx)*mass[i] * mass[j] * distance3inv;
+                force_y[j] += (dy)*mass[i] * mass[j] * distance3inv;
+                force_z[j] += (dz)*mass[i] * mass[j] * distance3inv;
             }
         }
         /*
@@ -316,7 +317,7 @@ public:
                 maxV = V;
             }
         }
-        // check_collision();
+        check_collision();
 
         t += timeStepSize;
     }

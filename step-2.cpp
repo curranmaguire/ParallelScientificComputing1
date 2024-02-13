@@ -53,6 +53,7 @@ public:
     bool IsLeaf = true;
     int body = -1; // store the index of the body if leaf
   };
+
   BHTreeNode *root;
 
   BHTreeNode *BuildTree()
